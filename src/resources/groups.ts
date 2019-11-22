@@ -1,6 +1,6 @@
 import Resource from './resource';
 import GroupRepresentation from '../defs/groupRepresentation';
-import {KeycloakAdminClient} from '../client';
+import {Agent} from './agent';
 import UserRepresentation from '../defs/userRepresentation';
 import MappingsRepresentation from '../defs/mappingsRepresentation';
 import RoleRepresentation, {
@@ -14,6 +14,8 @@ export interface GroupQuery {
 }
 
 export class Groups extends Resource<{realm?: string}> {
+  public basePath = '/admin/realms/{realm}/groups';
+
   public find = this.makeRequest<GroupQuery, GroupRepresentation[]>({
     method: 'GET',
   });
@@ -174,14 +176,4 @@ export class Groups extends Resource<{realm?: string}> {
     path: '/{id}/role-mappings/clients/{clientUniqueId}/available',
     urlParamKeys: ['id', 'clientUniqueId'],
   });
-
-  constructor(client: KeycloakAdminClient) {
-    super(client, {
-      path: '/admin/realms/{realm}/groups',
-      getUrlParams: () => ({
-        realm: client.realmName,
-      }),
-      getBaseUrl: () => client.baseUrl,
-    });
-  }
 }

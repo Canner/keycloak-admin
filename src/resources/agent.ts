@@ -1,8 +1,9 @@
 import urlJoin from 'url-join';
 import template from 'url-template';
-import axios, {AxiosRequestConfig} from 'axios';
+import {AxiosInstance, AxiosRequestConfig} from 'axios';
 import {pick, omit, isUndefined, last} from 'lodash';
 import {KeycloakAdminClient} from '../client';
+import Resource from './resource';
 
 // constants
 const SLASH = '/';
@@ -10,6 +11,7 @@ const SLASH = '/';
 // interface
 export interface RequestArgs {
   method: string;
+  resource?: Resource;
   path?: string;
   // Keys of url params to be applied
   urlParamKeys?: string[];
@@ -30,30 +32,26 @@ export interface RequestArgs {
 
 export class Agent {
   private client: KeycloakAdminClient;
-  private basePath: string;
-  private getBaseParams?: () => Record<string, any>;
-  private getBaseUrl?: () => string;
-  private requestConfig?: AxiosRequestConfig;
+  private axios: AxiosInstance;
 
-  constructor({
-    client,
-    path = '/',
-    getUrlParams = () => ({}),
-    getBaseUrl = () => client.baseUrl,
-  }: {
-    client: KeycloakAdminClient;
-    path?: string;
-    getUrlParams?: () => Record<string, any>;
-    getBaseUrl?: () => string;
-  }) {
+  constructor(axios: AxiosInstance) {
+    this.axios = axios;
+  }
+
+  public setClient(client: KeycloakAdminClient) {
     this.client = client;
-    this.getBaseParams = getUrlParams;
-    this.getBaseUrl = getBaseUrl;
-    this.basePath = path;
-    this.requestConfig = client.getRequestConfig() || {};
+  }
+
+  public getRequestConfig(): AxiosRequestConfig {
+    if (this.client && this.client.getRequestConfig()) {
+      return this.client.getRequestConfig();
+    }
+
+    return {};
   }
 
   public request({
+    resource,
     method,
     path = '',
     urlParamKeys = [],
@@ -64,7 +62,7 @@ export class Agent {
     returnResourceIdInLocationHeader,
   }: RequestArgs) {
     return async (payload: any = {}) => {
-      const baseParams = this.getBaseParams();
+      const baseParams = resource.getUrlParams(this.client);
 
       // Filter query parameters by queryParamKeys
       const queryParams = queryParamKeys ? pick(payload, queryParamKeys) : null;
@@ -83,6 +81,7 @@ export class Agent {
       }
 
       return this.requestWithParams({
+        resource,
         method,
         path,
         payload,
@@ -96,6 +95,7 @@ export class Agent {
   }
 
   public updateRequest({
+    resource,
     method,
     path = '',
     urlParamKeys = [],
@@ -106,7 +106,7 @@ export class Agent {
     returnResourceIdInLocationHeader,
   }: RequestArgs) {
     return async (query: any = {}, payload: any = {}) => {
-      const baseParams = this.getBaseParams();
+      const baseParams = resource.getUrlParams(this.client);
 
       // Filter query parameters by queryParamKeys
       const queryParams = queryParamKeys ? pick(query, queryParamKeys) : null;
@@ -124,6 +124,7 @@ export class Agent {
       }
 
       return this.requestWithParams({
+        resource,
         method,
         path,
         payload,
@@ -137,6 +138,7 @@ export class Agent {
   }
 
   private async requestWithParams({
+    resource,
     method,
     path,
     payload,
@@ -146,6 +148,7 @@ export class Agent {
     payloadKey,
     returnResourceIdInLocationHeader,
   }: {
+    resource: Resource;
     method: string;
     path: string;
     payload: any;
@@ -155,16 +158,15 @@ export class Agent {
     payloadKey?: string;
     returnResourceIdInLocationHeader?: {field: string};
   }) {
-    const newPath = urlJoin(this.basePath, path);
+    const newPath = urlJoin(resource.getBaseUrl(this.client), path);
 
     // Parse template and replace with values from urlParams
     const pathTemplate = template.parse(newPath);
-    const parsedPath = pathTemplate.expand(urlParams);
-    const url = `${this.getBaseUrl()}${parsedPath}`;
+    const url = pathTemplate.expand(urlParams);
 
     // Prepare request config
     const requestConfig: AxiosRequestConfig = {
-      ...this.requestConfig,
+      ...this.getRequestConfig(),
       method,
       url,
       headers: {
@@ -191,7 +193,7 @@ export class Agent {
     }
 
     try {
-      const res = await axios(requestConfig);
+      const res = await this.axios(requestConfig);
 
       // now we get the response of the http request
       // if `resourceIdInLocationHeader` is true, we'll get the resourceId from the location header field
@@ -208,9 +210,7 @@ export class Agent {
         if (!resourceId) {
           // throw an error to let users know the response is not expected
           throw new Error(
-            `resourceId is not found in Location header from request: ${
-              res.config.url
-            }`,
+            `resourceId is not found in Location header from request: ${res.config.url}`,
           );
         }
 

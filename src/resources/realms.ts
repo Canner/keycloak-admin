@@ -1,11 +1,14 @@
+import {KeycloakAdminClient} from '../client';
 import Resource from './resource';
 import RealmRepresentation from '../defs/realmRepresentation';
 import EventRepresentation from '../defs/eventRepresentation';
 import EventType from '../defs/eventTypes';
 
-import {KeycloakAdminClient} from '../client';
+import {Agent} from './agent';
 
 export class Realms extends Resource {
+  public basePath = '/admin/realms';
+
   /**
    * Realm
    * https://www.keycloak.org/docs-api/4.1/rest-api/#_realms_admin_resource
@@ -46,22 +49,37 @@ export class Realms extends Resource {
   /**
    * Get events Returns all events, or filters them based on URL query parameters listed here
    */
-  public findEvents = this.makeRequest<{
-    realm: string,
-    client?: string, dateFrom?: Date, dateTo?: Date,
-    first?: number, ipAddress?: string, max?: number,
-    type?: EventType, user?: string,
-  }, EventRepresentation[]>({
+  public findEvents = this.makeRequest<
+    {
+      realm: string;
+      client?: string;
+      dateFrom?: Date;
+      dateTo?: Date;
+      first?: number;
+      ipAddress?: string;
+      max?: number;
+      type?: EventType;
+      user?: string;
+    },
+    EventRepresentation[]
+  >({
     method: 'GET',
     path: '/{realm}/events',
     urlParamKeys: ['realm'],
-    queryParamKeys: ['client', 'dateFrom', 'dateTo', 'first', 'ipAddress', 'max', 'type', 'user'],
+    queryParamKeys: [
+      'client',
+      'dateFrom',
+      'dateTo',
+      'first',
+      'ipAddress',
+      'max',
+      'type',
+      'user',
+    ],
   });
 
-  constructor(client: KeycloakAdminClient) {
-    super(client, {
-      path: '/admin/realms',
-      getBaseUrl: () => client.baseUrl,
-    });
-  }
+  // Return empty params so the realm name is transmitted as data.
+  public getUrlParams = (
+    client: KeycloakAdminClient,
+  ): Record<string, any> => ({});
 }

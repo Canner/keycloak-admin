@@ -1,6 +1,6 @@
 import Resource from './resource';
 import ClientRepresentation from '../defs/clientRepresentation';
-import {KeycloakAdminClient} from '../client';
+import {Agent} from './agent';
 import RoleRepresentation from '../defs/roleRepresentation';
 import UserRepresentation from '../defs/userRepresentation';
 import CredentialRepresentation from '../defs/credentialRepresentation';
@@ -15,6 +15,8 @@ export interface ClientQuery {
 }
 
 export class Clients extends Resource<{realm?: string}> {
+  public basePath = '/admin/realms/{realm}/clients';
+
   public find = this.makeRequest<ClientQuery, ClientRepresentation[]>({
     method: 'GET',
   });
@@ -376,7 +378,7 @@ export class Clients extends Resource<{realm?: string}> {
    * Sessions
    */
   public listSessions = this.makeRequest<
-    {id: string, first?: number; max?: number},
+    {id: string; first?: number; max?: number},
     UserSessionRepresentation[]
   >({
     method: 'GET',
@@ -385,7 +387,7 @@ export class Clients extends Resource<{realm?: string}> {
   });
 
   public listOfflineSessions = this.makeRequest<
-    {id: string, first?: number; max?: number},
+    {id: string; first?: number; max?: number},
     UserSessionRepresentation[]
   >({
     method: 'GET',
@@ -393,10 +395,7 @@ export class Clients extends Resource<{realm?: string}> {
     urlParamKeys: ['id'],
   });
 
-  public getSessionCount = this.makeRequest<
-    {id: string},
-    { "count": number }
-  >({
+  public getSessionCount = this.makeRequest<{id: string}, {count: number}>({
     method: 'GET',
     path: '/{id}/session-count',
     urlParamKeys: ['id'],
@@ -404,22 +403,12 @@ export class Clients extends Resource<{realm?: string}> {
 
   public getOfflineSessionCount = this.makeRequest<
     {id: string},
-    { "count": number }
+    {count: number}
   >({
     method: 'GET',
     path: '/{id}/offline-session-count',
     urlParamKeys: ['id'],
   });
-
-  constructor(client: KeycloakAdminClient) {
-    super(client, {
-      path: '/admin/realms/{realm}/clients',
-      getUrlParams: () => ({
-        realm: client.realmName,
-      }),
-      getBaseUrl: () => client.baseUrl,
-    });
-  }
 
   /**
    * Find single protocol mapper by name.

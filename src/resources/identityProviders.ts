@@ -1,9 +1,11 @@
 import Resource from './resource';
 import IdentityProviderRepresentation from '../defs/identityProviderRepresentation';
 import IdentityProviderMapperRepresentation from '../defs/identityProviderMapperRepresentation';
-import {KeycloakAdminClient} from '../client';
+import {Agent} from './agent';
 
 export class IdentityProviders extends Resource<{realm?: string}> {
+  public basePath = '/admin/realms/{realm}/identity-provider';
+
   /**
    * Identity provider
    * https://www.keycloak.org/docs-api/4.1/rest-api/#_identity_providers_resource
@@ -112,14 +114,4 @@ export class IdentityProviders extends Resource<{realm?: string}> {
     path: '/instances/{alias}/mapper-types',
     urlParamKeys: ['alias'],
   });
-
-  constructor(client: KeycloakAdminClient) {
-    super(client, {
-      path: '/admin/realms/{realm}/identity-provider',
-      getUrlParams: () => ({
-        realm: client.realmName,
-      }),
-      getBaseUrl: () => client.baseUrl,
-    });
-  }
 }

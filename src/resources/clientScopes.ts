@@ -1,11 +1,13 @@
 import ClientScopeRepresentation from '../defs/clientScopeRepresentation';
 import Resource from './resource';
-import {KeycloakAdminClient} from '../client';
+import {Agent} from './agent';
 import ProtocolMapperRepresentation from '../defs/protocolMapperRepresentation';
 import MappingsRepresentation from '../defs/mappingsRepresentation';
 import RoleRepresentation from '../defs/roleRepresentation';
 
 export class ClientScopes extends Resource<{realm?: string}> {
+  public basePath = '/admin/realms/{realm}';
+
   public find = this.makeRequest<{}, ClientScopeRepresentation[]>({
     method: 'GET',
     path: '/client-scopes',
@@ -268,16 +270,6 @@ export class ClientScopes extends Resource<{realm?: string}> {
     path: '/client-scopes/{id}/scope-mappings/realm',
     urlParamKeys: ['id'],
   });
-
-  constructor(client: KeycloakAdminClient) {
-    super(client, {
-      path: '/admin/realms/{realm}',
-      getUrlParams: () => ({
-        realm: client.realmName,
-      }),
-      getBaseUrl: () => client.baseUrl,
-    });
-  }
 
   /**
    * Find client scope by name.

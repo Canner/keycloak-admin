@@ -2,7 +2,7 @@ import Resource from './resource';
 import UserRepresentation from '../defs/userRepresentation';
 import UserConsentRepresentation from '../defs/userConsentRepresentation';
 import UserSessionRepresentation from '../defs/userSessionRepresentation';
-import {KeycloakAdminClient} from '../client';
+import {Agent} from './agent';
 import MappingsRepresentation from '../defs/mappingsRepresentation';
 import RoleRepresentation, {
   RoleMappingPayload,
@@ -23,6 +23,8 @@ export interface UserQuery {
 }
 
 export class Users extends Resource<{realm?: string}> {
+  public basePath = '/admin/realms/{realm}/users';
+
   public find = this.makeRequest<UserQuery, UserRepresentation[]>({
     method: 'GET',
   });
@@ -308,7 +310,7 @@ export class Users extends Resource<{realm?: string}> {
    * list offline sessions associated with the user and client
    */
   public listOfflineSessions = this.makeRequest<
-    {id: string, clientId: string},
+    {id: string; clientId: string},
     UserSessionRepresentation[]
   >({
     method: 'GET',
@@ -319,10 +321,7 @@ export class Users extends Resource<{realm?: string}> {
   /**
    * logout user from all sessions
    */
-  public logout = this.makeRequest<
-    {id: string},
-    void
-  >({
+  public logout = this.makeRequest<{id: string}, void>({
     method: 'POST',
     path: '/{id}/logout',
     urlParamKeys: ['id'],
@@ -343,22 +342,11 @@ export class Users extends Resource<{realm?: string}> {
   /**
    * revoke consent and offline tokens for particular client from user
    */
-  public revokeConsent = this.makeRequest<
-    {id: string, clientId: string},
-    void
-  >({
-    method: 'DELETE',
-    path: '/{id}/consents/{clientId}',
-    urlParamKeys: ['id', 'clientId'],
-  });
-
-  constructor(client: KeycloakAdminClient) {
-    super(client, {
-      path: '/admin/realms/{realm}/users',
-      getUrlParams: () => ({
-        realm: client.realmName,
-      }),
-      getBaseUrl: () => client.baseUrl,
-    });
-  }
+  public revokeConsent = this.makeRequest<{id: string; clientId: string}, void>(
+    {
+      method: 'DELETE',
+      path: '/{id}/consents/{clientId}',
+      urlParamKeys: ['id', 'clientId'],
+    },
+  );
 }

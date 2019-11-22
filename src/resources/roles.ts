@@ -1,9 +1,11 @@
 import Resource from './resource';
 import RoleRepresentation from '../defs/roleRepresentation';
 import UserRepresentation from '../defs/userRepresentation';
-import {KeycloakAdminClient} from '../client';
+import {Agent} from './agent';
 
 export class Roles extends Resource<{realm?: string}> {
+  public basePath = '/admin/realms/{realm}';
+
   /**
    * Realm roles
    */
@@ -46,7 +48,10 @@ export class Roles extends Resource<{realm?: string}> {
     urlParamKeys: ['name'],
   });
 
-  public findUsersWithRole = this.makeRequest<{name: string}, UserRepresentation[]>({
+  public findUsersWithRole = this.makeRequest<
+    {name: string},
+    UserRepresentation[]
+  >({
     method: 'GET',
     path: '/roles/{name}/users',
     urlParamKeys: ['name'],
@@ -79,14 +84,4 @@ export class Roles extends Resource<{realm?: string}> {
     path: '/roles-by-id/{id}',
     urlParamKeys: ['id'],
   });
-
-  constructor(client: KeycloakAdminClient) {
-    super(client, {
-      path: '/admin/realms/{realm}',
-      getUrlParams: () => ({
-        realm: client.realmName,
-      }),
-      getBaseUrl: () => client.baseUrl,
-    });
-  }
 }
